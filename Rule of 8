@@ -1,0 +1,62 @@
+# Rule of 8 censor of labs #
+# keeps only median date's value for given date threshold #
+
+import csv
+import math
+from datetime import date
+
+DATE_THRESHOLD = 8
+
+
+def within_num_days(date1, date2, num_days):
+	month1, day1, year1 = date1.split("/")
+	month2, day2, year2 = date2.split("/")
+	d1 = date(int(year1), int(month1), int(day1))
+	d2 = date(int(year2), int(month2), int(day2))
+
+	diff = d2 - d1
+	#print(diff.days)
+	if (abs(diff.days) < num_days):
+		return True
+	else:
+		return False
+
+with open('output.csv', 'w') as outFile:
+	fileWriter = csv.writer(outFile)
+	with open('DayMedian.csv', 'r') as inFile:
+		fileReader = csv.reader(inFile)
+
+		num_to_median_over = 1
+		header_row = True
+		start_consecutive = None
+		prev = None
+		row_storage = [0] * (DATE_THRESHOLD + 1)
+		printed = False
+		row_counter = 0
+
+		for row in fileReader:
+			row_counter += 1
+			if (header_row):
+				fileWriter.writerow(row)
+				header_row = False
+			else:
+				if (prev == None):
+					prev = row
+					start_consecutive = row
+					row_storage[1] = row
+				elif (within_num_days(start_consecutive[0], row[0], DATE_THRESHOLD) and
+					row[1] == start_consecutive[1]):
+					num_to_median_over += 1
+					row_storage[num_to_median_over] = row
+					prev = row
+					printed = False
+				else:
+					#print(num_to_median_over)
+					fileWriter.writerow(row_storage[int(math.floor(num_to_median_over / 2)) + 1])
+					num_to_median_over = 1
+					row_storage[1] = row
+					start_consecutive = row
+					prev = row
+					printed = True
+
+		fileWriter.writerow(row_storage[int(math.floor(num_to_median_over / 2)) + 1])
