@@ -1,0 +1,54 @@
+# Minimum of 6 months spread between labs #
+# Keeps only values for those that have labs spanning 183 days #
+
+import csv
+import math
+from datetime import date
+
+DATE_THRESHOLD = 183
+
+def within_num_days(date1, date2, num_days):
+	year1, month1, day1 = date1.split("-")
+	year2, month2, day2 = date2.split("-")
+	d1 = date(int(year1), int(month1), int(day1))
+	d2 = date(int(year2), int(month2), int(day2))
+
+	diff = d2 - d1
+	#print(diff.days)
+	if (abs(diff.days) < num_days):
+		return True
+	else:
+		return False
+
+with open('output_post.csv', 'w') as outFile:
+	fileWriter = csv.writer(outFile)
+	with open('post_labs.csv', 'r') as inFile:
+		fileReader = csv.reader(inFile)
+
+		header_row = True
+		row_storage = [0] * (1000)
+		row_counter = 0
+		first_patient = True
+
+		for row in fileReader:
+			if (header_row):
+				fileWriter.writerow(row)
+				header_row = False
+			else:
+				if (first_patient):
+					current_patient = row[1]
+					patient_begin_date = row[2]
+					first_patient = False
+				if (row[1] == current_patient):
+					row_storage[row_counter] = row
+					row_counter += 1
+				else:
+					if not within_num_days(row_storage[0][2], row_storage[row_counter - 1][2], DATE_THRESHOLD):
+						for i in range(row_counter):
+							fileWriter.writerow(row_storage[i])
+					current_patient = row[1]
+					row_counter = 0
+					first_patient = True
+		if not within_num_days(row_storage[0][2], row_storage[row_counter - 1][2], DATE_THRESHOLD):
+						for i in range(row_counter):
+							fileWriter.writerow(row_storage[i])
